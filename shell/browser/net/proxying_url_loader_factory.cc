@@ -540,10 +540,10 @@ void ProxyingURLLoaderFactory::InProgressRequest::ContinueToSendHeaders(
         removed_headers.begin(), removed_headers.end());
 
     for (auto& set_header : set_headers) {
-      std::string header_value;
-      if (request_.headers.GetHeader(set_header, &header_value)) {
+      auto header = request_.headers.GetHeader(set_header);
+      if (header) {
         pending_follow_redirect_params_->modified_headers.SetHeader(
-            set_header, header_value);
+            set_header, header.value());
       } else {
         NOTREACHED();
       }
@@ -806,7 +806,7 @@ void ProxyingURLLoaderFactory::CreateLoaderAndStart(
   bool bypass_custom_protocol_handlers =
       options & kBypassCustomProtocolHandlers;
   if (!bypass_custom_protocol_handlers) {
-    auto it = intercepted_handlers_->find(request.url.scheme());
+    auto it = intercepted_handlers_->find(request.url.scheme_piece());
     if (it != intercepted_handlers_->end()) {
       mojo::PendingRemote<network::mojom::URLLoaderFactory> loader_remote;
       this->Clone(loader_remote.InitWithNewPipeAndPassReceiver());
