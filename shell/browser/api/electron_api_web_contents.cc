@@ -21,6 +21,7 @@
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
 #include "base/no_destructor.h"
+#include "base/strings/strcat.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/current_thread.h"
 #include "base/threading/scoped_blocking_call.h"
@@ -66,6 +67,7 @@
 #include "content/public/common/result_codes.h"
 #include "content/public/common/webplugininfo.h"
 #include "electron/buildflags/buildflags.h"
+#include "electron/mas.h"
 #include "electron/shell/common/api/api.mojom.h"
 #include "gin/arguments.h"
 #include "gin/data_object_builder.h"
@@ -125,12 +127,13 @@
 #include "shell/common/gin_converters/value_converter.h"
 #include "shell/common/gin_helper/dictionary.h"
 #include "shell/common/gin_helper/error_thrower.h"
+#include "shell/common/gin_helper/locker.h"
 #include "shell/common/gin_helper/object_template_builder.h"
 #include "shell/common/gin_helper/promise.h"
 #include "shell/common/language_util.h"
 #include "shell/common/node_includes.h"
+#include "shell/common/node_util.h"
 #include "shell/common/options_switches.h"
-#include "shell/common/process_util.h"
 #include "shell/common/thread_restrictions.h"
 #include "shell/common/v8_value_serializer.h"
 #include "storage/browser/file_system/isolated_context.h"
@@ -1902,7 +1905,7 @@ namespace {
 // This object wraps the InvokeCallback so that if it gets GC'd by V8, we can
 // still call the callback and send an error. Not doing so causes a Mojo DCHECK,
 // since Mojo requires callbacks to be called before they are destroyed.
-class ReplyChannel : public gin::Wrappable<ReplyChannel> {
+class ReplyChannel final : public gin::Wrappable<ReplyChannel> {
  public:
   using InvokeCallback = electron::mojom::ElectronApiIPC::InvokeCallback;
   static gin::Handle<ReplyChannel> Create(v8::Isolate* isolate,
@@ -2113,10 +2116,9 @@ void WebContents::DidFinishNavigation(
 
     // Do not emit "did-fail-load" for canceled requests.
     if (code != net::ERR_ABORTED) {
-      EmitWarning(
-          node::Environment::GetCurrent(JavascriptEnvironment::GetIsolate()),
-          "Failed to load URL: " + url.possibly_invalid_spec() +
-              " with error: " + description,
+      util::EmitWarning(
+          base::StrCat({"Failed to load URL: ", url.possibly_invalid_spec(),
+                        " with error: ", description}),
           "electron");
       Emit("did-fail-load", code, description, url, is_main_frame,
            frame_process_id, frame_routing_id);

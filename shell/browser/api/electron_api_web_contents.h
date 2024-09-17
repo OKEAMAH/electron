@@ -23,6 +23,7 @@
 #include "chrome/browser/ui/exclusive_access/exclusive_access_context.h"  // nogncheck
 #include "chrome/browser/ui/exclusive_access/exclusive_access_manager.h"
 #include "content/common/frame.mojom.h"
+#include "content/public/browser/browser_thread.h"
 #include "content/public/browser/devtools_agent_host.h"
 #include "content/public/browser/javascript_dialog_manager.h"
 #include "content/public/browser/render_widget_host.h"
@@ -110,19 +111,19 @@ class BaseWindow;
 class FrameSubscriber;
 
 // Wrapper around the content::WebContents.
-class WebContents : public ExclusiveAccessContext,
-                    public gin::Wrappable<WebContents>,
-                    public gin_helper::EventEmitterMixin<WebContents>,
-                    public gin_helper::Constructible<WebContents>,
-                    public gin_helper::Pinnable<WebContents>,
-                    public gin_helper::CleanedUpAtExit,
-                    public content::WebContentsObserver,
-                    public content::WebContentsDelegate,
-                    private content::RenderWidgetHost::InputEventObserver,
-                    public content::JavaScriptDialogManager,
-                    public InspectableWebContentsDelegate,
-                    public InspectableWebContentsViewDelegate,
-                    public BackgroundThrottlingSource {
+class WebContents final : public ExclusiveAccessContext,
+                          public gin::Wrappable<WebContents>,
+                          public gin_helper::EventEmitterMixin<WebContents>,
+                          public gin_helper::Constructible<WebContents>,
+                          public gin_helper::Pinnable<WebContents>,
+                          public gin_helper::CleanedUpAtExit,
+                          public content::WebContentsObserver,
+                          public content::WebContentsDelegate,
+                          private content::RenderWidgetHost::InputEventObserver,
+                          public content::JavaScriptDialogManager,
+                          public InspectableWebContentsDelegate,
+                          public InspectableWebContentsViewDelegate,
+                          public BackgroundThrottlingSource {
  public:
   enum class Type {
     kBackgroundPage,  // An extension background page.
